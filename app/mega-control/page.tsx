@@ -11,7 +11,29 @@ const empty=():Work=>({id:crypto.randomUUID(),name:['',''],kind:['',''],descript
 export default function Admin(){const [data,setData]=useState<Content|null>(null),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[item,setItem]=useState<Work|null>(null),[filter,setFilter]=useState('all');
  async function refresh(){try{const r=await fetch('/api/manage');if(r.ok)setData(await r.json());else if(r.status!==401)setMessage('تعذّر تحميل لوحة التحكم. حاول تحديث الصفحة.')}catch{setMessage('تعذّر الاتصال')}finally{setLoading(false)}}
  useEffect(()=>{refresh()},[]);
- async function login(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setMessage('');const f=new FormData(e.currentTarget);try{const r=await fetch('/api/manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',email:f.get('email'),password:f.get('password')})});const d=await r.json() as Content & {error?:string;url:string};if(!r.ok)throw Error(d.error||'تعذّر تنفيذ الطلب');await refresh()}catch(e){setMessage((e as Error).message)}finally{setBusy(false)}}
+ async function login(e: React.FormEvent<HTMLFormElement>) {
+   e.preventDefault();
+   setBusy(true);
+   setMessage('');
+   const form = new FormData(e.currentTarget);
+   try {
+     const response = await fetch('/api/manage', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ action: 'login', email: form.get('email'), password: form.get('password') }),
+     });
+     const result: { ok?: boolean; error?: string } | null = await response.json().catch(() => null);
+     if (!response.ok || !result?.ok) {
+       setMessage(result?.error || 'خدمة تسجيل الدخول غير متاحة حاليًا. حاول مرة أخرى.');
+       return;
+     }
+     await refresh();
+   } catch {
+     setMessage('تعذّر الاتصال بخدمة تسجيل الدخول. حاول مرة أخرى.');
+   } finally {
+     setBusy(false);
+   }
+ }
  async function save(next:Content){setBusy(true);setMessage('');try{const r=await fetch('/api/manage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)});const d=await r.json() as Content & {error?:string;url:string};if(!r.ok){if(r.status===401)setData(null);throw Error(d.error||'تعذّر تنفيذ الطلب')}setData(d);setItem(null);setMessage('تم الحفظ على الموقع بنجاح.');return true}catch(e){setMessage((e as Error).message);return false}finally{setBusy(false)}}
  async function upload(f:File,field:'image'|'mobile'|'video'){if(f.size>25000000){setMessage('أقصى حجم ٢٥ ميجابايت');return}setBusy(true);setMessage('جاري رفع الملف…');try{const form=new FormData();form.set('file',f);const r=await fetch('/api/upload',{method:'POST',body:form});const d=await r.json() as Content & {error?:string;url:string};if(!r.ok)throw Error(d.error||'تعذّر تنفيذ الطلب');setItem(p=>p?{...p,[field]:d.url}:p);setMessage('تم الرفع. اضغط حفظ المشروع لتطبيق التغيير.')}catch(e){setMessage((e as Error).message)}finally{setBusy(false)}}
  const field=(key:'name'|'kind'|'description',title:string)=><div className="admin-pair">{[0,1].map(n=><label key={n}>{title} {n?'بالإنجليزي':'بالعربي'}{key==='description'?<textarea required value={item![key][n]} dir={n?'ltr':'rtl'} onChange={e=>setItem({...item!,[key]:item![key].map((v,i)=>i===n?e.target.value:v) as [string,string]})}/>:<input required value={item![key][n]} dir={n?'ltr':'rtl'} onChange={e=>setItem({...item!,[key]:item![key].map((v,i)=>i===n?e.target.value:v) as [string,string]})}/>}</label>)}</div>;
