@@ -206,7 +206,12 @@ export default function Home() {
         e.currentTarget.style.setProperty('--ry', '0deg');
       }}
     >
-      <div className="project-cover" style={{ background: p.color }}>
+      <div
+        className={p.type === 'design' && p.image && !p.mobile
+          ? 'project-cover project-cover--artwork'
+          : 'project-cover'}
+        style={{ background: p.color }}
+      >
         {p.image ? (
           <>
             <div className={p.mobile ? 'desktop-device' : 'single-image'}>

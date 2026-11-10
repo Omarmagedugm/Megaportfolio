@@ -9,7 +9,7 @@ import BehanceProject from '../../components/BehanceProject';
 import {
   auth,
   BLUEPRINT_LIMITS,
-  BOOTSTRAPPED_ADMIN_EMAIL,
+  DEFAULT_CONTACT_EMAIL,
   checkIsUserAdmin,
   deleteProjectFromFirestore,
   googleProvider,
@@ -54,7 +54,7 @@ export default function Admin() {
   const [authReady, setAuthReady] = useState(false);
   const [data, setData] = useState<Content>({
     projects: [],
-    email: BOOTSTRAPPED_ADMIN_EMAIL,
+    email: DEFAULT_CONTACT_EMAIL,
     revision: 0,
   });
   const [busy, setBusy] = useState(false);
@@ -74,7 +74,7 @@ export default function Admin() {
             await seedDefaultProjectsIfNeeded(currentUser);
           } else {
             setMessage(
-              `هذا الحساب (${currentUser.email || ''}) غير مصرح له بإدارة المحتوى. استخدم حساب الإدارة (${BOOTSTRAPPED_ADMIN_EMAIL}).`
+              `هذا الحساب (${currentUser.email || ''}) غير مصرح له بإدارة المحتوى. سجّل الدخول بحساب إدارة مصرح له.`
             );
           }
         } catch {
