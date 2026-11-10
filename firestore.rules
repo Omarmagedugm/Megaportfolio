@@ -4,5 +4,156 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if false;
     }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidProjectId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 80 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidPortfolioProject(data) {
+      return data.keys().hasAll([
+        'id', 'nameAr', 'nameEn', 'kindAr', 'kindEn',
+        'descriptionAr', 'descriptionEn', 'type', 'url', 'image',
+        'mobile', 'video', 'color', 'behance', 'demo',
+        'published', 'sortOrder', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'nameAr', 'nameEn', 'kindAr', 'kindEn',
+        'descriptionAr', 'descriptionEn', 'type', 'url', 'image',
+        'mobile', 'video', 'color', 'behance', 'demo',
+        'published', 'sortOrder', 'ownerId', 'createdAt', 'updatedAt'
+      ]) &&
+      data.id is string && data.id.size() >= 1 && data.id.size() <= 80 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.nameAr is string && data.nameAr.size() >= 1 && data.nameAr.size() <= 200 &&
+      data.nameEn is string && data.nameEn.size() >= 1 && data.nameEn.size() <= 200 &&
+      data.kindAr is string && data.kindAr.size() >= 1 && data.kindAr.size() <= 200 &&
+      data.kindEn is string && data.kindEn.size() >= 1 && data.kindEn.size() <= 200 &&
+      data.descriptionAr is string && data.descriptionAr.size() >= 1 && data.descriptionAr.size() <= 4000 &&
+      data.descriptionEn is string && data.descriptionEn.size() >= 1 && data.descriptionEn.size() <= 4000 &&
+      data.type is string && data.type.size() >= 3 && data.type.size() <= 10 &&
+      (data.type == 'web' || data.type == 'app' || data.type == 'design' || data.type == 'video') &&
+      data.url is string && data.url.size() <= 2048 &&
+      data.image is string && data.image.size() <= 2048 &&
+      data.mobile is string && data.mobile.size() <= 2048 &&
+      data.video is string && data.video.size() <= 2048 &&
+      data.color is string && data.color.size() == 7 && data.color.matches('^#[a-fA-F0-9]{6}$') &&
+      data.behance is string && data.behance.size() <= 2048 &&
+      data.demo is bool &&
+      data.published is bool &&
+      data.sortOrder is number &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidPortfolioSettings(data) {
+      return data.keys().hasAll(['email', 'revision', 'ownerId', 'createdAt', 'updatedAt']) &&
+      data.keys().hasOnly(['email', 'revision', 'ownerId', 'createdAt', 'updatedAt']) &&
+      data.email is string && data.email.size() <= 200 &&
+      data.revision is int && data.revision >= 0 &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'createdAt']) &&
+      data.keys().hasOnly(['uid', 'createdAt']) &&
+      data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.createdAt is timestamp;
+    }
+
+    match /projects/{projectId} {
+      allow get: if isValidProjectId(projectId) && (existing().published == true || isAdmin());
+      allow list: if existing().published == true || isAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidProjectId(projectId) &&
+        isValidPortfolioProject(incoming()) &&
+        incoming().id == projectId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if (
+        isSignedIn() && isValidPortfolioProject(incoming()) && (
+          isValidProjectId(projectId) &&
+          incoming().id == existing().id &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'nameAr', 'nameEn', 'kindAr', 'kindEn',
+            'descriptionAr', 'descriptionEn', 'type', 'url', 'image',
+            'mobile', 'video', 'color', 'behance', 'demo',
+            'published', 'sortOrder', 'updatedAt'
+          ]) &&
+          isAdmin()
+        )
+      );
+      allow delete: if isVerifiedUser() && isValidProjectId(projectId) && isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId) && (settingId == 'general' || isAdmin());
+      allow list: if false;
+      allow create: if isVerifiedUser() &&
+        isValidId(settingId) &&
+        settingId == 'general' &&
+        isValidPortfolioSettings(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+      allow update: if (
+        isSignedIn() && isValidPortfolioSettings(incoming()) && (
+          isValidId(settingId) &&
+          settingId == 'general' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().revision == existing().revision + 1 &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'revision', 'updatedAt']) &&
+          isAdmin()
+        )
+      );
+      allow delete: if false;
+    }
+
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list: if false;
+      allow create: if isVerifiedUser() &&
+        isValidId(adminId) &&
+        isValidAdminRecord(incoming()) &&
+        incoming().uid == adminId &&
+        incoming().createdAt == request.time &&
+        isAdmin();
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(adminId) && isAdmin();
+    }
   }
 }

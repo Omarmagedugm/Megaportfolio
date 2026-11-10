@@ -1,0 +1,227 @@
+{
+  "entities": {
+    "PortfolioProject": {
+      "title": "PortfolioProject",
+      "description": "A bilingual portfolio project item displayed on the public site and managed by the admin.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique project identifier",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "nameAr": {
+          "type": "string",
+          "description": "Arabic project title",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "nameEn": {
+          "type": "string",
+          "description": "English project title",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "kindAr": {
+          "type": "string",
+          "description": "Arabic project category label",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "kindEn": {
+          "type": "string",
+          "description": "English project category label",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "descriptionAr": {
+          "type": "string",
+          "description": "Arabic project description",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "descriptionEn": {
+          "type": "string",
+          "description": "English project description",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "type": {
+          "type": "string",
+          "description": "Project category type",
+          "enum": ["web", "app", "design", "video"],
+          "minLength": 3,
+          "maxLength": 10
+        },
+        "url": {
+          "type": "string",
+          "description": "External or relative project URL",
+          "minLength": 0,
+          "maxLength": 2048
+        },
+        "image": {
+          "type": "string",
+          "description": "Cover image path or URL",
+          "minLength": 0,
+          "maxLength": 2048
+        },
+        "mobile": {
+          "type": "string",
+          "description": "Optional mobile screenshot path or URL",
+          "minLength": 0,
+          "maxLength": 2048
+        },
+        "video": {
+          "type": "string",
+          "description": "Optional video embed or file URL",
+          "minLength": 0,
+          "maxLength": 2048
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex background color for project card",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "behance": {
+          "type": "string",
+          "description": "Optional Behance gallery URL",
+          "minLength": 0,
+          "maxLength": 2048
+        },
+        "demo": {
+          "type": "boolean",
+          "description": "Whether the project is a fictional concept demo"
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Whether the project is publicly visible"
+        },
+        "sortOrder": {
+          "type": "number",
+          "description": "Numeric display order index"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the admin who created the project",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "nameAr",
+        "nameEn",
+        "kindAr",
+        "kindEn",
+        "descriptionAr",
+        "descriptionEn",
+        "type",
+        "url",
+        "image",
+        "mobile",
+        "video",
+        "color",
+        "behance",
+        "demo",
+        "published",
+        "sortOrder",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PortfolioSettings": {
+      "title": "PortfolioSettings",
+      "description": "Global portfolio configuration such as public contact email and revision number.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Public contact email address",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "revision": {
+          "type": "number",
+          "description": "Monotonically increasing revision counter"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the admin who owns the settings",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": [
+        "email",
+        "revision",
+        "ownerId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator membership document keyed by UID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "UID of the administrator",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        }
+      },
+      "required": [
+        "uid",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": "PortfolioProject",
+      "description": "Portfolio projects collection readable when published and writable only by verified admins."
+    },
+    "/settings/{settingId}": {
+      "schema": "PortfolioSettings",
+      "description": "Global portfolio settings document (e.g., general) readable publicly and writable only by verified admins."
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminRecord",
+      "description": "Trusted admin lookup collection used by RBAC rules."
+    }
+  }
+}

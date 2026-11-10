@@ -1,0 +1,8 @@
+{
+  "name": "ميجا | تصميم، تطوير، وحكايات بصرية",
+  "description": "Mega — مصمم ومطوّر وصانع محتوى من إسكندرية. Websites, apps, design and video.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
