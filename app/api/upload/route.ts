@@ -1,3 +1,32 @@
-import {env} from 'cloudflare:workers';
-import {authorized,reply} from '../../../lib/portfolio-server';
-export async function POST(r:Request){if(r.headers.get('origin')!==new URL(r.url).origin)return reply({error:'طلب غير مسموح'},403);if(!await authorized(r))return reply({error:'سجّل الدخول'},401);if(!env.BUCKET)return reply({error:'التخزين غير متاح'},503);if(Number(r.headers.get('content-length')||0)>26000000)return reply({error:'أقصى حجم ٢٥ ميجابايت'},413);const form=await r.formData();const f=form.get('file');if(!(f instanceof File)||f.size>25000000)return reply({error:'أقصى حجم ٢٥ ميجابايت'},400);const types:Record<string,string>={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/webm':'webm'};if(!types[f.type])return reply({error:'صيغة غير مدعومة'},400);const key=crypto.randomUUID()+'.'+types[f.type];await env.BUCKET.put(key,f.stream(),{httpMetadata:{contentType:f.type}});return reply({url:'/media/'+key});}
+import { authorized, mediaBucket, reply, sameOrigin } from '../../../lib/portfolio-server';
+
+const extensions = new Map([
+  ['image/jpeg', 'jpg'], ['image/png', 'png'], ['image/webp', 'webp'],
+  ['video/mp4', 'mp4'], ['video/webm', 'webm'],
+]);
+
+export async function POST(request: Request) {
+  if (!sameOrigin(request)) return reply({ error: 'طلب غير مسموح' }, 403);
+  if (!await authorized(request)) return reply({ error: 'سجّل الدخول' }, 401);
+  if (Number(request.headers.get('content-length')) > 26_000_000) {
+    return reply({ error: 'أقصى حجم ٢٥ ميجابايت' }, 413);
+  }
+  try {
+    const form = await request.formData();
+    const file = form.get('file');
+    if (!(file instanceof File) || !file.size || file.size > 25_000_000) {
+      return reply({ error: 'اختار ملف صالح حجمه لحد ٢٥ ميجابايت' }, 400);
+    }
+    const extension = extensions.get(file.type);
+    if (!extension) return reply({ error: 'صيغة غير مدعومة' }, 400);
+    const key = crypto.randomUUID() + '.' + extension;
+    await mediaBucket().file('portfolio/' + key).save(Buffer.from(await file.arrayBuffer()), {
+      resumable: false,
+      metadata: { contentType: file.type },
+      preconditionOpts: { ifGenerationMatch: 0 },
+    });
+    return reply({ url: '/media/' + key });
+  } catch {
+    return reply({ error: 'تعذّر رفع الملف. حاول مرة أخرى.' }, 503);
+  }
+}

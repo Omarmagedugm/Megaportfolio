@@ -1,11 +1,26 @@
 # Mega Portfolio
-Bilingual Arabic/English portfolio. Seven real projects retain fourteen browser screenshots. Fifteen clearly labelled fictional concepts: five apps, five designs, five six-second motion clips.
 
-## Content management
-Private route `/mega-control`, absent from public navigation, noindex. Email/password checked server-side with salted PBKDF2 (100,000 iterations); 8-hour HttpOnly SameSite session, Secure on HTTPS. Login throttled to eight attempts per 15 minutes. Production secrets: ADMIN_EMAIL, ADMIN_PASSWORD_HASH, ADMIN_PASSWORD_SALT. Never commit their values. Sites owner-private gate is preserved independently.
+بورتفوليو عربي وإنجليزي مع كاروسيل للهوية البصرية، صفحات للمشاريع، وتضمين Behance وفيديوهات Facebook وYouTube. لوحة التحكم على `/mega-control` لتعديل المشاريع ورفع الصور والفيديوهات حتى 25 MB.
 
-Shared D1 content with optimistic revision checking. R2 image/video upload supports JPEG/PNG/WebP/MP4/WebM up to 25 MB. Deleting a project removes its listing, not uploaded object bytes. Content export available. Edit both languages, categories, cover/mobile images, video URLs, concept flags and public contact email.
+## النشر على Firebase
 
-Facebook public video iframe support and fallback source link; direct video URLs recommended over share links. YouTube and MP4/WebM supported. No Facebook API credentials needed. Playback depends on source visibility and embedding permissions.
+1. جهّز مشروع Firebase مخصص للبورتفوليو على خطة **Blaze**. فعّل Firestore (قاعدة `(default)` في Production mode)، وCloud Storage، وتسجيل الدخول Email/Password في Authentication.
+2. أضف حساب الإدارة من **Authentication → Users** وانسخ الـ UID. سجّل Firebase Web App وانسخ الـ `apiKey` من إعداداته.
+3. من **App Hosting**، أنشئ Backend واربطه بمستودع `Omarmagedugm/Megaportfolio` بفرع `main` ومجلد المشروع `/`، واختر Web App اللي سجلته.
+4. أضف متغيرات البيئة التالية في إعدادات الـ Backend واعمل rollout:
 
-Use npm run db:generate for schema changes. Apply pending SQL locally after build using Wrangler. Sites applies hosted migrations on publish. Local credentials and content are isolated from production.
+   | المتغير | القيمة |
+   | --- | --- |
+   | `FIREBASE_ADMIN_UID` | UID حساب الإدارة |
+   | `FIREBASE_WEB_API_KEY` | `apiKey` لتطبيق الويب |
+   | `FIREBASE_STORAGE_BUCKET` | اسم الـ bucket بدون `gs://` |
+   | `PORTFOLIO_ORIGIN` | رابط الموقع النهائي مثل `https://example.hosted.app` بدون شرطة في الآخر |
+
+5. Firebase Admin SDK يستخدم حساب خدمة App Hosting تلقائيًا. يحتاج حساب الخدمة صلاحيات إدارة جلسات Firebase Authentication والقراءة والكتابة في Firestore ورفع وقراءة الملفات من الـ bucket. راجع أدوار Firebase Authentication Admin وCloud Datastore User وStorage Object User على الـ bucket إذا كانت الأذونات ناقصة.
+6. اترك Firestore وStorage مقفولين على الوصول المباشر من المتصفح. القواعد المرفقة للمشروع المخصص يمكن نشرها بـ `firebase deploy --only firestore:rules,storage --project YOUR_PROJECT_ID`. لو بتستخدم مشروع مشترك، ادمج القواعد مع قواعد تطبيقاتك الحالية بدل استبدالها. التطبيق يتعامل مع البيانات من السيرفر ويعرض الملفات العامة من `/media/`.
+
+المشاريع الأساسية ووسائطها موجودة في المستودع. أي تعديلات موجودة فقط في D1 أو وسائط مرفوعة فقط إلى R2 تحتاج نقلًا منفصلًا.
+
+## التشغيل المحلي
+
+باستخدام Node.js 22.13+ شغّل `npm ci` ثم `npm run dev`. استخدم المتغيرات المذكورة في `.env.local` واضبط `PORTFOLIO_ORIGIN=http://localhost:3000`. للوصول إلى خدمات Firebase محليًا استخدم Application Default Credentials مع `GCLOUD_PROJECT` لمشروع تطوير، أو Emulator Suite. بيانات تسجيل الدخول والمفاتيح الخاصة تُدار خارج المستودع.
