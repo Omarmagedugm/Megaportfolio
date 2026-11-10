@@ -1,0 +1,3 @@
+'use client';
+import {behanceProject} from '../lib/behance';
+export default function BehanceProject({url,title,english=false}:{url:string;title:string;english?:boolean}){const p=behanceProject(url);if(!p)return null;return <section className="behance-project"><div className="behance-bar"><b>Bē <span>Behance</span></b><a href={p.url} target="_blank" rel="noopener noreferrer">{english?'Open on Behance ↗':'افتح على بيهانس ↗'}</a></div><iframe src={p.embed} title={title+' — Behance'} loading="lazy" allow="fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin"/><p>{english?'Embedded from Behance. If it does not appear, open the original project above.':'عرض مضمّن من بيهانس. لو المشروع مش ظاهر، افتحه من الرابط بالأعلى.'}</p></section>}
