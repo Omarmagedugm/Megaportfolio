@@ -1,4 +1,4 @@
-import { getApps, initializeApp } from 'firebase-admin/app';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
@@ -7,7 +7,16 @@ import { works, type Work } from '../app/data';
 type Portfolio = { projects: Work[]; email: string };
 const sessionSeconds = 28_800;
 const chunkSize = 800_000;
-const firebase = () => getApps()[0] ?? initializeApp();
+function firebase() {
+  const existing = getApps()[0];
+  if (existing) return existing;
+
+  const credentials = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!credentials) return initializeApp();
+
+  const serviceAccount = JSON.parse(credentials);
+  return initializeApp({ credential: cert(serviceAccount) });
+}
 
 export function reply(data: unknown, status = 200, headers: Record<string, string> = {}) {
   return Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers } });

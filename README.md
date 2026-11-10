@@ -21,6 +21,20 @@
 
 المشاريع الأساسية ووسائطها موجودة في المستودع. أي تعديلات موجودة فقط في D1 أو وسائط مرفوعة فقط إلى R2 تحتاج نقلًا منفصلًا.
 
+## ربط Firebase مع نسخة Vercel
+
+لربط نسخة Vercel الحالية استخدم مشروع Firebase `megaportfolio-d9e51`. فعّل Email/Password في **Authentication → Sign-in method** وأنشئ حساب الإدارة من **Users**. أضف المتغيرات التالية في **Vercel → Settings → Environment Variables** لبيئة **Production**، ثم اعمل Redeploy.
+
+| المتغير | القيمة |
+| --- | --- |
+| `FIREBASE_WEB_API_KEY` | `apiKey` من إعدادات تطبيق الويب في مشروع Firebase |
+| `FIREBASE_ADMIN_UID` | UID حساب الإدارة من قائمة Users في Firebase Authentication |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | محتوى ملف JSON لحساب الخدمة في نفس المشروع. احفظه كمتغير Sensitive |
+| `FIREBASE_STORAGE_BUCKET` | اسم الـ bucket من Firebase Storage بدون `gs://` |
+| `PORTFOLIO_ORIGIN` | `https://megaportfolio-beige.vercel.app` |
+
+استخدم حساب خدمة بالصلاحيات الموضحة أعلاه. مفتاح حساب الخدمة مكانه إعدادات Vercel فقط. نسخة Firebase App Hosting تستخدم بيانات الاعتماد التلقائية عند غياب `FIREBASE_SERVICE_ACCOUNT_JSON`.
+
 ## التشغيل المحلي
 
 باستخدام Node.js 22.13+ شغّل `npm ci` ثم `npm run dev`. استخدم المتغيرات المذكورة في `.env.local` واضبط `PORTFOLIO_ORIGIN=http://localhost:3000`. للوصول إلى خدمات Firebase محليًا استخدم Application Default Credentials مع `GCLOUD_PROJECT` لمشروع تطوير، أو Emulator Suite. بيانات تسجيل الدخول والمفاتيح الخاصة تُدار خارج المستودع.
